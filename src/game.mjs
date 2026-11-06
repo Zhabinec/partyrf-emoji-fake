@@ -2,7 +2,7 @@ import { emojis, words } from './content.mjs';
 
 export const limits = { minPlayers: 3, maxPlayers: 10, name: 24 };
 const rounds = 3;
-const durations = { choose: 12_000, explain: 18_000, vote: 30_000 };
+const durations = { briefing: 2500, choose: 12_000, explain: 18_000, vote: 30_000 };
 
 export function newGame() {
   return { phase: 'lobby', step: 0, deadline: null };
@@ -12,6 +12,11 @@ function enter(game, phase, now) {
   game.phase = phase;
   game.step++;
   game.deadline = durations[phase] ? now + durations[phase] : null;
+}
+
+function brief(game, nextPhase, now) {
+  game.nextPhase = nextPhase;
+  enter(game, 'briefing', now);
 }
 
 function shuffle(items, random) {
@@ -30,7 +35,7 @@ function start(game, players, now, random) {
     fakes: shuffle(players, random).slice(0, Math.floor(players.length / 3)),
     order: shuffle(players, random), round: 0, turn: 0, history: [], votes: {},
   });
-  prepareTurn(game, now, random);
+  brief(game, 'choose', now);
 }
 
 function speaker(game) {
@@ -50,7 +55,8 @@ function nextTurn(game, now, random) {
     game.turn = 0;
     game.round++;
   }
-  if (game.round === rounds) enter(game, 'vote', now);
+  if (game.round === rounds) brief(game, 'vote', now);
+  else if (game.turn === 0) brief(game, 'choose', now);
   else prepareTurn(game, now, random);
 }
 
@@ -62,12 +68,15 @@ function reveal(game, now) {
   const accused = ranked.filter(([, votes]) => votes > firstSafe).map(([id]) => id);
   const townWins = game.fakes.every(id => accused.includes(id));
   game.result = { counts, accused, townWins, fakes: game.fakes, words: game.pair };
-  enter(game, 'finished', now);
+  brief(game, 'verdict', now);
 }
 
 export function tick(game, now, random = Math.random) {
   if (game.deadline === null || now < game.deadline) return;
-  if (game.phase === 'vote') reveal(game, now);
+  if (game.phase === 'briefing') {
+    if (game.nextPhase === 'choose') prepareTurn(game, now, random);
+    else enter(game, game.nextPhase, now);
+  } else if (game.phase === 'vote') reveal(game, now);
   else nextTurn(game, now, random);
 }
 
@@ -78,6 +87,11 @@ export function act(game, { id, isHost, players }, action, now, random = Math.ra
     if (!isHost) return 'Партию запускает хост.';
     if (players.length < limits.minPlayers) return 'Нужно хотя бы три игрока.';
     start(game, players, now, random);
+    return;
+  }
+  if (action.type === 'next-finale' && ['verdict', 'moment'].includes(game.phase)) {
+    if (!isHost) return 'Досье открывает хост.';
+    enter(game, game.phase === 'verdict' ? 'moment' : 'finished', now);
     return;
   }
   if (!game.order?.includes(id)) return 'Дождись следующей партии.';
@@ -103,9 +117,15 @@ export function act(game, { id, isHost, players }, action, now, random = Math.ra
 
 export function view(game, id) {
   const { phase, step, deadline } = game;
-  const data = { phase, step, deadline };
+  const data = { phase, step, deadline, duration: durations[phase] ?? null };
   if (phase === 'lobby') return data;
-  if (phase === 'finished') return { ...data, result: game.result };
+  if (phase === 'briefing') return { ...data, nextPhase: game.nextPhase, round: game.round + 1 };
+  if (phase === 'verdict') return { ...data, result: { townWins: game.result.townWins, fakes: game.fakes } };
+  if (phase === 'moment') {
+    const clue = game.history.findLast(entry => entry.emoji && game.fakes.includes(entry.id));
+    return { ...data, moment: clue ? { ...clue, word: game.pair[1] } : null };
+  }
+  if (phase === 'finished') return { ...data, result: game.result, history: game.history };
   data.word = game.pair[Number(game.fakes.includes(id))];
   data.history = game.history;
   data.fakeCount = game.fakes.length;

@@ -127,8 +127,12 @@ button.secondary { background: transparent; color: var(--paper); border-color: v
 :focus-visible { outline: .18rem solid var(--pink); outline-offset: .22rem; }
 .room-code { text-transform: uppercase; }
 .round-status { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); margin-bottom: .65rem; }
-.round-status:has(:empty):not(:has(time:not([hidden]))) { margin-bottom: 0; }
+.round-status:not(:has(.countdown)) { display: none; }
 time { color: var(--yellow); font-variant-numeric: tabular-nums; }
+.countdown { display: grid; grid-template-columns: auto minmax(3rem, 7rem); align-items: center; gap: .55rem; }
+.countdown time { font-size: 1.35rem; letter-spacing: 0; }
+.countdown progress { width: 100%; height: .65rem; accent-color: var(--mint); }
+.countdown progress.time-low { accent-color: var(--pink); }
 .invite { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-block: 1rem .6rem; }
 .invite strong { font-size: clamp(1.5rem, 5vw, 2.6rem); letter-spacing: .14em; }
 .invite button { width: auto; }
@@ -201,3 +205,14 @@ time { color: var(--yellow); font-variant-numeric: tabular-nums; }
 }
 .clues { margin-top: 1.25rem; color: var(--muted); }
 .clues summary { cursor: pointer; padding-block: .45rem; }
+.scene {
+  position: relative;
+  isolation: isolate;
+  text-align: center;
+  padding-block: clamp(1rem, 6svh, 4rem);
+}
+.scene > p:not(.kicker, .chosen) { margin: .85rem auto; max-width: 40ch; color: var(--muted); }
+.scene > button { margin-top: 1rem; width: min(100%, 18rem); }
+.briefing .checkpoint { inset: 50% auto auto 50%; transform: translate(-50%, -50%); opacity: .38; }
+.briefing h1 { animation: stamp-in 440ms ease-out both; }
+.clues + button { margin-top: 1rem; }

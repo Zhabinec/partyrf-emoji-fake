@@ -28,11 +28,14 @@ function inviteUrl() {
 
 function updateClock() {
   const timer = document.querySelector('#timer');
-  if (timer) {
-    const seconds = state.deadline === null ? null : Math.max(0, Math.ceil((state.deadline - Date.now() - offset) / 1000));
-    timer.hidden = seconds === null;
-    timer.textContent = seconds === null ? '' : '0:' + String(seconds).padStart(2, '0');
-  }
+  if (!timer) return;
+  const remaining = Math.max(0, state.deadline - Date.now() - offset);
+  const seconds = Math.ceil(remaining / 1000);
+  timer.textContent = '0:' + String(seconds).padStart(2, '0');
+  const bar = document.querySelector('#time-bar');
+  bar.max = state.duration;
+  bar.value = remaining;
+  bar.classList.toggle('time-low', seconds <= 5);
 }
 
 function applyState(next, id) {
