@@ -26,10 +26,31 @@ function passport(label, word) {
   return `<div class="topic passport"><small>${label}</small><strong>${escape(word)}</strong></div>`;
 }
 
+function rocket() {
+  return `<svg class="rocket" viewBox="0 0 88 112" aria-hidden="true" focusable="false">
+    <path class="rocket-flame" d="M35 80q-8 14 9 30 17-16 9-30Z"/>
+    <path class="rocket-fin" d="M32 51Q8 64 13 86l21-12m22-23q24 13 19 35L54 74"/>
+    <path class="rocket-body" d="M44 3Q17 24 28 72l6 11h20l6-11Q71 24 44 3Z"/>
+    <circle class="rocket-window" cx="44" cy="40" r="10"/>
+  </svg>`;
+}
+
+function inspector() {
+  return `<svg class="inspector" viewBox="0 0 106 86" aria-hidden="true" focusable="false">
+    <path class="antennae" d="M35 24 24 9m47 15L82 9"/>
+    <circle cx="23" cy="8" r="5"/><circle cx="83" cy="8" r="5"/>
+    <path d="M53 17c27 0 42 14 42 32S72 79 53 82C34 79 11 67 11 49s15-32 42-32Z"/>
+    <ellipse class="inspector-eye" cx="35" cy="48" rx="8" ry="12" transform="rotate(-21 35 48)"/>
+    <ellipse class="inspector-eye" cx="71" cy="48" rx="8" ry="12" transform="rotate(21 71 48)"/>
+    <path class="inspector-smile" d="M46 66q7 5 14 0"/>
+  </svg>`;
+}
+
 export function entrance(code, testBots = false) {
   return `
     <section class="intro">
       ${checkpoint()}
+      ${rocket()}
       ${kicker('КОСМИЧЕСКАЯ ТАМОЖНЯ · 3–10 ИГРОКОВ')}
       <h1>Эмодзи<br><em>фейк</em></h1>
       <p class="lede">У пришельцев один код допуска. У землян под прикрытием — похожий. Выбирайте эмодзи, объясняйте их вслух и вычисляйте, кто прилетел с Земли.</p>
@@ -65,7 +86,10 @@ function renderRoom(state) {
       : state.nextPhase === 'verdict'
         ? ['Сканер, <em>не подведи!</em>', 'Голоса приняты. Проверяем, кто прилетел с Земли.']
         : briefings[state.round - 1];
-    return `<div class="scene briefing">${checkpoint()}${kicker('СВЯЗЬ С ТАМОЖНЕЙ')}<h1>${title}</h1><p>${caption}</p></div>`;
+    const art = state.nextPhase === 'verdict'
+      ? '<div class="scan-passport" aria-hidden="true"><span>✦</span></div>'
+      : inspector();
+    return `<div class="scene briefing">${art}${kicker('СВЯЗЬ С ТАМОЖНЕЙ')}<h1>${title}</h1><p>${caption}</p></div>`;
   }
   if (state.phase === 'lobby') {
     return `${kicker('У ШЛЮЗА · ' + state.players.length + ' / 10')}
@@ -79,7 +103,8 @@ function renderRoom(state) {
   if (state.phase === 'verdict') {
     const { townWins, fakes } = state.result;
     return `<div class="scene verdict" data-verdict="${townWins ? 'caught' : 'escaped'}">
-        <span class="stamp">${townWins ? 'ПРИШЕЛЬЦЫ ПОБЕДИЛИ' : 'ЗЕМЛЯНЕ ПОБЕДИЛИ'}</span>
+        ${townWins ? inspector() : rocket()}
+        <span class="stamp">${townWins ? 'ПРИШЕЛЬЦЫ ПОБЕДИЛИ' : 'ДОПУСК РАЗРЕШЁН'}</span>
         <h1>${townWins ? 'Землян <em>вычислили!</em>' : 'Земляне <em>прошли контроль!</em>'}</h1>
         <p class="revealed-crew">Под прикрытием: <strong>${fakes.map(nameOf).join(', ')}</strong></p>
         ${finaleButton('Момент партии')}
@@ -88,10 +113,11 @@ function renderRoom(state) {
   if (state.phase === 'moment') {
     const { moment } = state;
     return `<div class="scene">
+      ${inspector()}
       ${kicker('УЛИКА ИЗ БАГАЖА')}
       <h1>${moment ? 'И как это <em>объяснили?</em>' : 'Багаж <em>пуст!</em>'}</h1>
       ${moment ? `<p class="chosen">${escape(moment.emoji)}</p>
-        <p>${nameOf(moment.id)} · раунд ${moment.round} · код «${escape(moment.word)}»</p>`
+        <p>${nameOf(moment.id)}, у тебя был код <strong>«${escape(moment.word)}»</strong>. Как ты объяснил этот эмодзи в раунде №${moment.round}?</p>`
         : '<p>В журнале нет эмодзи от землян.</p>'}
       ${finaleButton('Открыть послесловие')}
     </div>`;
@@ -128,7 +154,7 @@ function renderRoom(state) {
     ${secret}
     ${choosing ? (mine ?
       `<p class="lede">Выбери один эмодзи, который сможешь связать со своим кодом.</p>
-        <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(escape(emoji), 'choose', emoji, 'emoji')).join('')}</section>` :
+        <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(`<span>${escape(emoji)}</span>`, 'choose', emoji, 'emoji')).join('')}</section>` :
       '<p class="waiting">Игрок выбирает эмодзи.</p>') :
       `<p class="chosen">${escape(state.selected)}</p><p class="lede">${mine ?
         'Объясни связь вслух. Сам код держи в секрете.' : speakerIsBot
@@ -140,7 +166,7 @@ function renderRoom(state) {
 
 export function roomScreen(state) {
   const clock = state.deadline !== null && state.phase !== 'briefing'
-    ? '<div class="countdown"><time id="timer"></time><progress id="time-bar" aria-label="Осталось времени"></progress></div>' : '';
+    ? '<div class="countdown"><time id="timer"></time><progress id="time-bar" aria-label="Осталось времени"></progress><span class="clock-warning" id="clock-warning" hidden>Шлюз закрывается</span></div>' : '';
   return `<section class="panel round">
     <section class="round-status" aria-label="Время и готовность"><span id="progress"></span>${clock}</section>
     ${renderRoom(state)}

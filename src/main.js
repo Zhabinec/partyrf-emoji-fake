@@ -41,6 +41,7 @@ function updateClock() {
   bar.max = state.duration;
   bar.value = remaining;
   bar.classList.toggle('time-low', seconds <= 5);
+  document.querySelector('#clock-warning').hidden = seconds > 5;
   const step = state.step;
   const tick = step + ':' + seconds;
   if (seconds > 0 && seconds <= 5 && tick !== lastTick) {
