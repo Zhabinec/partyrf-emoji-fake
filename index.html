@@ -12,10 +12,21 @@
   <header class="masthead">
     <a href="./" class="wordmark" aria-label="Эмодзи-фейк, главная"><span class="signal" aria-hidden="true">✦</span> ЭМОДЗИ-ФЕЙК</a>
     <span class="badge" id="room-label">ИГРА ДЛЯ КОМПАНИИ</span>
+    <button type="button" class="header-button" id="sound-toggle" aria-haspopup="dialog" aria-controls="sound-settings">Звук</button>
+    <button type="button" class="header-button" id="leave-room" hidden>Выйти</button>
   </header>
+  <dialog id="sound-settings" class="sound-settings" aria-labelledby="sound-title">
+    <h2 id="sound-title">Настройки звука</h2>
+    <label for="music-level">Музыка <span id="music-value" aria-hidden="true"></span></label>
+    <input id="music-level" type="range" min="0" max="100" value="100" autofocus>
+    <label for="effects-level">Звуковые эффекты <span id="effects-value" aria-hidden="true"></span></label>
+    <input id="effects-level" type="range" min="0" max="100" value="100">
+    <form method="dialog"><button>Готово</button></form>
+  </dialog>
   <main id="app" class="stage"></main>
   <p id="feedback" class="feedback" role="status" hidden></p>
   <footer class="footer">ОРБИТАЛЬНЫЙ ПУНКТ КОНТРОЛЯ <span>✦</span> ЗЕМЛЯНАМ НЕ ВЕРИТЬ</footer>
+  <p class="footer">Музыка · <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN2100030" target="_blank" rel="noopener">Space Jazz — Kevin MacLeod</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></p>
 </body>
 </html>
 

@@ -26,7 +26,7 @@ function passport(label, word) {
   return `<div class="topic passport"><small>${label}</small><strong>${escape(word)}</strong></div>`;
 }
 
-export function entrance(code) {
+export function entrance(code, testBots = false) {
   return `
     <section class="intro">
       ${checkpoint()}
@@ -45,6 +45,7 @@ export function entrance(code) {
         <input id="code" class="room-code" name="code" maxlength="6" value="${escape(code)}" placeholder="Введи код друга" autocomplete="off" autocapitalize="characters">
         <button type="submit" name="mode" value="join">Войти в комнату</button>
         ${code ? '' : '<button type="submit" name="mode" value="create" class="secondary">Создать комнату</button>'}
+        ${testBots && !code ? '<button type="submit" name="mode" value="create-test" class="secondary" formnovalidate>Тест с ботами</button>' : ''}
       </form>
     </section>`;
 }
@@ -55,6 +56,7 @@ function control(label, action, value, className = '') {
 function renderRoom(state) {
   const isHost = state.host === state.me;
   const nameOf = id => escape(state.players.find(player => player.id === id)?.name ?? 'Игрок');
+  const speakerIsBot = state.players.some(player => player.id === state.speaker && player.isBot);
   const roster = row => `<ul class="roster">${state.players.map(player => row(player.id)).join('')}</ul>`;
   const finaleButton = label => isHost ? button(label, 'next-finale') : '<p class="waiting">Хост откроет следующий экран.</p>';
   if (state.phase === 'briefing') {
@@ -129,7 +131,9 @@ function renderRoom(state) {
         <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(escape(emoji), 'choose', emoji, 'emoji')).join('')}</section>` :
       '<p class="waiting">Игрок выбирает эмодзи.</p>') :
       `<p class="chosen">${escape(state.selected)}</p><p class="lede">${mine ?
-        'Объясни связь вслух. Сам код держи в секрете.' : 'Послушай объяснение. Подозрительный багаж запоминается.'}</p>
+        'Объясни связь вслух. Сам код держи в секрете.' : speakerIsBot
+          ? 'Бот предъявил багаж. В тесте его ход закончится автоматически.'
+          : 'Послушай объяснение. Подозрительный багаж запоминается.'}</p>
         ${mine || isHost ? button('Следующий пассажир', 'done') : ''}`}
     ${history}`;
 }

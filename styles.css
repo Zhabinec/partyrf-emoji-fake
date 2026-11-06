@@ -216,3 +216,27 @@ time { color: var(--yellow); font-variant-numeric: tabular-nums; }
 .briefing .checkpoint { inset: 50% auto auto 50%; transform: translate(-50%, -50%); opacity: .38; }
 .briefing h1 { animation: stamp-in 440ms ease-out both; }
 .clues + button { margin-top: 1rem; }
+.header-button { width: auto; min-height: 2.75rem; padding-inline: .75rem; background: var(--field); color: var(--mint); border-color: var(--edge); }
+.sound-settings {
+  width: min(26rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: clamp(1rem, 5vw, 1.75rem);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--paper);
+}
+.sound-settings::backdrop { background: rgb(0 0 0 / 65%); }
+.sound-settings h2 { margin-bottom: 1.25rem; }
+.sound-settings label { display: flex; justify-content: space-between; gap: .75rem; }
+.sound-settings label span { color: var(--mint); font-variant-numeric: tabular-nums; }
+.sound-settings input[type="range"] { padding: 0; accent-color: var(--mint); }
+.page-turn { animation: page-in 300ms ease-out both; }
+@keyframes page-in {
+  from { opacity: .45; transform: translateY(.45rem); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 45rem) {
+  .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+  .masthead .badge { grid-row: 2; grid-column: 1 / -1; text-align: left; }
+}
