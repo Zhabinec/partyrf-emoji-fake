@@ -9,6 +9,7 @@
   --pink: #ff8eca;
   --yellow: #ffdf19;
   --violet: #a38aff;
+  --mint: #84f8cf;
   --radius: 1.45rem;
   font: 100%/1.5 system-ui, sans-serif;
 }
@@ -20,6 +21,7 @@ body {
   flex-direction: column;
   color: var(--paper);
   background:
+    radial-gradient(circle, #c7adff88 1px, transparent 1.6px) 0 0 / 67px 79px,
     radial-gradient(ellipse at 4% 40%, #341949 0%, transparent 47%),
     radial-gradient(ellipse at 100% 95%, #25163e 0%, transparent 52%),
     var(--ink);
@@ -58,7 +60,7 @@ body {
 .stage {
   flex: 1;
   display: grid;
-  grid-template-columns: 1.1fr .9fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
   align-items: center;
   align-content: center;
   gap: clamp(1.5rem, 5vw, 5rem);
@@ -66,18 +68,20 @@ body {
 }
 .stage.in-room { display: block; }
 .intro { position: relative; isolation: isolate; }
-.intro::before {
-  content: "";
+.checkpoint {
   position: absolute;
-  inset: 0 0 0 24%;
+  inset: auto 0 0 auto;
+  width: min(72%, 24rem);
   z-index: -1;
-  opacity: .62;
-  border-radius: 50%;
-  background: repeating-radial-gradient(ellipse at center, transparent 0 1.1rem, var(--edge) 1.15rem 1.2rem);
-  transform: rotate(-17deg);
-  mask-image: linear-gradient(90deg, transparent, black, transparent);
+  opacity: .55;
   pointer-events: none;
 }
+.checkpoint .orbit { fill: none; stroke: var(--violet); stroke-width: 1; }
+.checkpoint .planet { fill: var(--panel); stroke: var(--violet); stroke-width: 2; }
+.checkpoint .brackets, .checkpoint .scan { fill: none; stroke: var(--mint); stroke-width: 2; }
+.checkpoint .scan { animation: scanner 1.7s ease-in-out 2; }
+.checkpoint .beacon { fill: var(--yellow); }
+@keyframes scanner { 50% { transform: translateY(25px); } }
 h1, h2, p { margin: 0; }
 h1, h2 { line-height: 1.02; overflow-wrap: anywhere; }
 h1 { font-size: clamp(2.3rem, 6vw, 5.5rem); font-weight: 950; letter-spacing: -.055em; }
@@ -105,7 +109,7 @@ input, select, button {
   border-radius: .75rem;
   font: inherit;
 }
-input, select { border: 1px solid var(--edge); background: var(--field); padding: .65rem .85rem; color: var(--paper); }
+input, select { min-width: 0; border: 1px solid var(--edge); background: var(--field); padding: .65rem .85rem; color: var(--paper); }
 input::placeholder { color: var(--muted); opacity: .86; }
 button {
   cursor: pointer;
@@ -142,10 +146,11 @@ time { color: var(--yellow); font-variant-numeric: tabular-nums; }
 .footer span { color: var(--pink); }
 .sr-only { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
 @media (max-width: 45rem) {
-  .stage { grid-template-columns: 1fr; }
+  .stage { grid-template-columns: minmax(0, 1fr); }
   .masthead { padding-block: .85rem; }
   .wordmark { font-size: .75rem; }
   .badge, .footer { font-size: .65rem; }
+  .intro h1 { font-size: clamp(2.7rem, 12vw, 4.5rem); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -160,6 +165,39 @@ time { color: var(--yellow); font-variant-numeric: tabular-nums; }
   border-color: var(--edge);
 }
 .emoji:hover { border-color: var(--yellow); filter: none; }
-.chosen { font-size: clamp(3rem, 12vw, 7rem); margin-top: .45rem; }
+.chosen { font-size: clamp(3rem, 12vw, 7rem); margin-top: .45rem; animation: stamp-in 320ms ease-out both; }
+.passport {
+  border: 1px dashed var(--edge);
+  border-inline-start: .28rem solid var(--mint);
+  background: repeating-linear-gradient(0deg, transparent 0 5px, #a38aff0b 5px 6px), var(--field);
+}
+.passport small { color: var(--mint); }
+.manifest {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .7rem;
+  margin-block: 1rem;
+}
+.manifest .passport { margin: 0; }
+.manifest .passport:last-child { border-inline-start-color: var(--pink); }
+.manifest .passport:last-child small { color: var(--pink); }
+.revealed-crew { overflow-wrap: anywhere; }
+.verdict .stamp {
+  display: inline-block;
+  margin-block: .2rem .85rem;
+  border: .16rem solid currentColor;
+  border-radius: .25rem;
+  padding: .22rem .6rem;
+  color: var(--mint);
+  font-size: .78rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  animation: stamp-in 350ms ease-out both;
+}
+.verdict[data-verdict="escaped"] .stamp { color: var(--pink); }
+@keyframes stamp-in {
+  from { opacity: 0; transform: scale(1.14) rotate(-6deg); }
+  to { opacity: 1; transform: none; }
+}
 .clues { margin-top: 1.25rem; color: var(--muted); }
 .clues summary { cursor: pointer; padding-block: .45rem; }

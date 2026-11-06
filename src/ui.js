@@ -4,18 +4,35 @@ const escape = value => String(value).replace(/[&<>"']/g, char => ({
 
 const button = (label, action) => `<button type="button" data-action="${action}">${label}</button>`;
 const kicker = text => `<p class="kicker">${text}</p>`;
+const inspections = ['Проверка документов', 'Досмотр багажа', 'Последний контроль'];
+
+function checkpoint() {
+  return `<svg class="checkpoint" viewBox="0 0 280 190" aria-hidden="true" focusable="false">
+    <ellipse class="orbit" cx="140" cy="95" rx="126" ry="47" transform="rotate(-22 140 95)"/>
+    <circle class="planet" cx="140" cy="95" r="72"/>
+    <path class="orbit" d="M90 70h100M78 95h124M90 120h100"/>
+    <path class="scan" d="M79 95h122"/>
+    <path class="brackets" d="M56 70V45h25m118 0h25v25m0 50v25h-25m-118 0H56v-25"/>
+    <circle class="beacon" cx="230" cy="48" r="6"/>
+  </svg>`;
+}
+
+function passport(label, word) {
+  return `<div class="topic passport"><small>${label}</small><strong>${escape(word)}</strong></div>`;
+}
 
 export function entrance(code) {
   return `
     <section class="intro">
-      ${kicker('03–10 ИГРОКОВ / ОНЛАЙН')}
+      ${checkpoint()}
+      ${kicker('КОСМИЧЕСКАЯ ТАМОЖНЯ · 3–10 ИГРОКОВ')}
       <h1>Эмодзи<br><em>фейк</em></h1>
-      <p class="lede">Одно слово на всех. Почти. Выбирай эмодзи, объясняй связь и вычисли тех, кому досталось другое слово.</p>
-      <ol class="beats"><li>Выбери эмодзи</li><li>Объясни связь</li><li>Найди фейка</li></ol>
+      <p class="lede">У пришельцев один код допуска. У землян под прикрытием — похожий. Выбирайте эмодзи, объясняйте их вслух и вычисляйте, кто прилетел с Земли.</p>
+      <ol class="beats"><li>Открой паспорт</li><li>Объясни эмодзи</li><li>Вычисли землян</li></ol>
     </section>
     <section class="panel entry">
-      ${kicker('ТОЧКА ВХОДА')}
-      <h2>${code ? 'Тебя ждут в комнате' : 'Собираем компанию'}</h2>
+      ${kicker('ОРБИТАЛЬНЫЙ ТЕРМИНАЛ')}
+      <h2>${code ? 'Тебя ждут у шлюза' : 'Посадка открыта'}</h2>
       <form data-form="entry">
         <label for="name">Твоё имя</label>
         <input id="name" name="name" maxlength="24" required autocomplete="nickname" placeholder="Например, Саша">
@@ -35,51 +52,55 @@ function renderRoom(state) {
   const nameOf = id => escape(state.players.find(player => player.id === id)?.name ?? 'Игрок');
   const roster = row => `<ul class="roster">${state.players.map(player => row(player.id)).join('')}</ul>`;
   if (state.phase === 'lobby') {
-    return `${kicker('ЛОББИ · ' + state.players.length + ' / 10')}
-      <h1>Собираем <em>компанию</em></h1>
+    return `${kicker('У ШЛЮЗА · ' + state.players.length + ' / 10')}
+      <h1>Пассажиры <em>на борт!</em></h1>
       <p class="lede">Отправь друзьям ссылку. Для старта нужно минимум три игрока.</p>
       <section class="invite"><strong>${state.code}</strong>${button('Скопировать ссылку', 'copy')}</section>
       <input id="invite-link" class="invite-link" aria-label="Ссылка на комнату" readonly>
       ${roster(id => `<li><span>${nameOf(id)}</span><b>${id === state.host ? 'Хост' : 'В комнате'}</b></li>`)}
-      ${isHost && state.players.length >= 3 ? button('Начать игру', 'start') : '<p class="waiting">Ждём старта партии.</p>'}`;
+      ${isHost && state.players.length >= 3 ? button('Начать досмотр', 'start') : '<p class="waiting">Ждём открытия шлюза.</p>'}`;
   }
   if (state.phase === 'finished') {
     const { townWins, fakes, words, counts, accused } = state.result;
-    return `${kicker('ФИНАЛ')}<h1>${townWins ? 'Фейки <em>раскрыты!</em>' : 'Фейки <em>победили!</em>'}</h1>
-      <p class="lede">Общее слово — «${escape(words[0])}». Слово фейков — «${escape(words[1])}».</p>
-      <p>Фейки: <strong>${fakes.map(nameOf).join(', ')}</strong></p>
+    return `${kicker('ДОСМОТР ЗАВЕРШЁН')}
+      <div class="verdict" data-verdict="${townWins ? 'caught' : 'escaped'}">
+        <span class="stamp">${townWins ? 'ПРИШЕЛЬЦЫ ПОБЕДИЛИ' : 'ЗЕМЛЯНЕ ПОБЕДИЛИ'}</span>
+        <h1>${townWins ? 'Землян <em>вычислили!</em>' : 'Земляне <em>прошли контроль!</em>'}</h1>
+      </div>
+      <div class="manifest">${passport('КОД ПРИШЕЛЬЦЕВ', words[0])}${passport('КОД ЗЕМЛЯН', words[1])}</div>
+      <p class="revealed-crew">Люди под прикрытием: <strong>${fakes.map(nameOf).join(', ')}</strong></p>
       <p>Под подозрением: <strong>${accused.length ? accused.map(nameOf).join(', ') : 'никто не набрал решающего перевеса'}</strong></p>
-      ${roster(id => id in counts ? `<li><span>${nameOf(id)}${fakes.includes(id) ? ' <small>фейк</small>' : ''}</span><b>${counts[id]}</b></li>` : '')}
+      ${roster(id => id in counts ? `<li><span>${nameOf(id)}${fakes.includes(id) ? ' <small>землянин</small>' : ''}</span><b>${counts[id]}</b></li>` : '')}
       ${isHost ? button('Сыграть ещё', 'start') : '<p class="waiting">Хост может начать новую партию.</p>'}`;
   }
 
-  const secret = `<p class="topic"><small>ТВОЁ СЕКРЕТНОЕ СЛОВО</small> ${escape(state.word)}</p>`;
-  const history = state.history.length ? `<details class="clues"><summary>Прошлые эмодзи</summary>
+  const secret = passport('ТВОЙ ПАСПОРТ · СЕКРЕТНЫЙ КОД', state.word);
+  const history = state.history.length ? `<details class="clues"><summary>Журнал досмотра</summary>
     <ul class="roster">${state.history.map(({ id, emoji, round }) => `<li><span>${nameOf(id)} <small>раунд ${round}</small></span><b>${escape(emoji ?? 'Пропуск')}</b></li>`).join('')}</ul></details>` : '';
 
   if (state.phase === 'vote') {
-    return `${kicker('ГОЛОСОВАНИЕ')}<h1>Кто <em>фейк?</em></h1>${secret}
-      <p class="lede">Фейков в партии: ${state.fakeCount}. У тебя один голос.</p>
+    return `${kicker('ГОЛОСОВАНИЕ')}<h1>Кто прилетел <em>с Земли?</em></h1>${secret}
+      <p class="lede">Людей под прикрытием: ${state.fakeCount}. У тебя один голос.</p>
       ${state.done ? '<p class="waiting">Голос принят. Ждём остальных.</p>' :
         `<form data-form="vote"><label for="suspect">Твой подозреваемый</label>
           <select id="suspect" name="value" required><option value="">Выбери игрока</option>
             ${state.players.filter(player => player.id !== state.me).map(player =>
               `<option value="${escape(player.id)}">${nameOf(player.id)}</option>`).join('')}
-          </select><button type="submit">Подтвердить голос</button></form>`}${history}`;
+          </select><button type="submit">Отправить на досмотр</button></form>`}${history}`;
   }
   const mine = state.speaker === state.me;
   const choosing = state.phase === 'choose';
-  return `${kicker('РАУНД ' + state.round + ' / 3 · ХОД ' + state.turn.join(' / '))}
-    <h1>${mine ? (choosing ? 'Выбери <em>эмодзи</em>' : 'Объясни <em>связь</em>') :
-      `Ход игрока <em>${nameOf(state.speaker)}</em>`}</h1>
+  return `${kicker(inspections[state.round - 1] + ' · ' + state.round + '/3 · ХОД ' + state.turn.join(' / '))}
+    <h1>${mine ? (choosing ? 'Что у тебя <em>в багаже?</em>' : 'И как это <em>сюда попало?</em>') :
+      `На досмотре <em>${nameOf(state.speaker)}</em>`}</h1>
     ${secret}
     ${choosing ? (mine ?
-      `<p class="lede">Какой эмодзи ты сможешь связать со своим словом?</p>
+      `<p class="lede">Выбери один эмодзи, который сможешь связать со своим кодом.</p>
         <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(escape(emoji), 'choose', emoji, 'emoji')).join('')}</section>` :
       '<p class="waiting">Игрок выбирает эмодзи.</p>') :
       `<p class="chosen">${escape(state.selected)}</p><p class="lede">${mine ?
-        'Объясни связь вслух. Само слово держи в секрете.' : 'Послушай объяснение и запомни подсказку.'}</p>
-        ${mine || isHost ? button('Дальше', 'done') : ''}`}
+        'Объясни связь вслух. Сам код держи в секрете.' : 'Послушай объяснение. Подозрительный багаж запоминается.'}</p>
+        ${mine || isHost ? button('Следующий пассажир', 'done') : ''}`}
     ${history}`;
 }
 
