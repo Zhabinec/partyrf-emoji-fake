@@ -161,7 +161,7 @@ function renderRoom(state) {
         : `<p class="chosen">${escape(state.selected)}</p><p class="waiting">Выбор запечатан. Ждём остальных.</p>`}`;
   }
   return `${label}<h1>Открываем <em>багаж!</em></h1>${secret}
-    <p class="lede">Объясняйте свои эмодзи вслух, задавайте вопросы и спорьте в любом порядке. Код держите в секрете.</p>
+    <p class="lede">Обсудите эмодзи вслух в любом порядке. Код держите в секрете.</p>
     <section class="evidence-grid discussion-cards" aria-label="Эмодзи этого раунда">
       ${state.cards.map(clue => `<div class="evidence-card">${evidenceCard(nameOf(clue.id), [clue])}</div>`).join('')}
     </section>`;
