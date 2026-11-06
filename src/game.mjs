@@ -2,7 +2,7 @@ import { emojis, words } from './content.mjs';
 
 export const limits = { minPlayers: 3, maxPlayers: 10, name: 24 };
 const rounds = 3;
-const durations = { briefing: 2500, choose: 12_000, explain: 18_000, vote: 30_000 };
+const durations = { briefing: 2500, choose: 18_000, explain: 45_000, vote: 30_000 };
 
 export function newGame() {
   return { phase: 'lobby', step: 0, deadline: null };
@@ -33,31 +33,22 @@ function start(game, players, now, random) {
   Object.assign(game, {
     pair: pairs[Math.floor(random() * pairs.length)],
     fakes: shuffle(players, random).slice(0, Math.floor(players.length / 3)),
-    order: shuffle(players, random), round: 0, turn: 0, history: [], votes: {},
+    order: shuffle(players, random), round: 0, history: [], votes: {},
   });
   brief(game, 'choose', now);
 }
 
-function speaker(game) {
-  return game.order[(game.turn + game.round) % game.order.length];
-}
-
-function prepareTurn(game, now, random) {
-  game.options = shuffle(emojis, random).slice(0, 3);
-  game.selected = null;
+function prepareRound(game, now, random) {
+  game.options = Object.fromEntries(game.order.map(id => [id, shuffle(emojis, random).slice(0, 3)]));
+  game.choices = {};
   enter(game, 'choose', now);
 }
 
-function nextTurn(game, now, random) {
-  game.history.push({ id: speaker(game), emoji: game.selected, round: game.round + 1 });
-  game.turn++;
-  if (game.turn === game.order.length) {
-    game.turn = 0;
-    game.round++;
+function openDiscussion(game, now) {
+  for (const id of game.order) {
+    game.history.push({ id, emoji: game.choices[id] ?? null, round: game.round + 1 });
   }
-  if (game.round === rounds) brief(game, 'vote', now);
-  else if (game.turn === 0) brief(game, 'choose', now);
-  else prepareTurn(game, now, random);
+  enter(game, 'explain', now);
 }
 
 function reveal(game, now) {
@@ -74,10 +65,13 @@ function reveal(game, now) {
 export function tick(game, now, random = Math.random) {
   if (game.deadline === null || now < game.deadline) return;
   if (game.phase === 'briefing') {
-    if (game.nextPhase === 'choose') prepareTurn(game, now, random);
+    if (game.nextPhase === 'choose') prepareRound(game, now, random);
     else enter(game, game.nextPhase, now);
+  } else if (game.phase === 'choose') openDiscussion(game, now);
+  else if (game.phase === 'explain') {
+    game.round++;
+    brief(game, game.round === rounds ? 'vote' : 'choose', now);
   } else if (game.phase === 'vote') reveal(game, now);
-  else nextTurn(game, now, random);
 }
 
 export function act(game, { id, isHost, players }, action, now, random = Math.random) {
@@ -95,14 +89,13 @@ export function act(game, { id, isHost, players }, action, now, random = Math.ra
     return;
   }
   if (!game.order?.includes(id)) return 'Дождись следующей партии.';
-  if (game.phase === 'choose' && action.type === 'choose' && id === speaker(game)) {
-    if (!game.options.includes(action.value)) return 'Выбери один из трёх эмодзи.';
-    game.selected = action.value;
-    enter(game, 'explain', now);
-    return;
-  }
-  if (game.phase === 'explain' && action.type === 'done' && (id === speaker(game) || isHost)) {
-    nextTurn(game, now, random);
+  if (game.phase === 'choose' && action.type === 'choose') {
+    if (Object.hasOwn(game.choices, id)) return 'Эмодзи уже выбран.';
+    if (!game.options[id].includes(action.value)) return 'Выбери один из трёх эмодзи.';
+    game.choices[id] = action.value;
+    if (players.filter(player => game.order.includes(player)).every(player => Object.hasOwn(game.choices, player))) {
+      openDiscussion(game, now);
+    }
     return;
   }
   if (game.phase === 'vote' && action.type === 'vote') {
@@ -135,9 +128,12 @@ export function view(game, id) {
     return data;
   }
   data.round = game.round + 1;
-  data.turn = [game.turn + 1, game.order.length];
-  data.speaker = speaker(game);
-  if (phase === 'choose' && id === data.speaker) data.options = game.options;
-  if (phase === 'explain') data.selected = game.selected;
+  if (phase === 'choose') {
+    data.selected = game.choices[id] ?? null;
+    data.done = data.selected !== null;
+    if (!data.done) data.options = game.options[id];
+    data.progress = [Object.keys(game.choices).length, game.order.length];
+  }
+  if (phase === 'explain') data.cards = game.history.filter(entry => entry.round === data.round);
   return data;
 }

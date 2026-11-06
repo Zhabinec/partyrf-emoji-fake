@@ -203,6 +203,33 @@ time { color: var(--yellow); font-variant-numeric: tabular-nums; }
   .emoji:active span { transform: scale(.78); }
 }
 .chosen { font-size: clamp(3rem, 12vw, 7rem); margin-top: .45rem; animation: stamp-in 320ms ease-out both; }
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: .6rem;
+  margin-top: 1rem;
+}
+.evidence-card {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: .3rem;
+  min-width: 0;
+  padding: .7rem .4rem;
+  border: 1px solid var(--edge);
+  border-radius: .75rem;
+  background: var(--field);
+  color: var(--paper);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.evidence-card small { color: var(--muted); font-size: .7rem; }
+.evidence-emojis { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .25rem; font-size: clamp(1.2rem, 4vw, 1.8rem); }
+.discussion-cards .evidence-emojis { font-size: clamp(2rem, 7vw, 3.5rem); }
+.discussion-cards .evidence-card { animation: stamp-in 320ms ease-out both; }
+.discussion-cards .evidence-card:nth-child(even) { animation-delay: 80ms; }
+.suspect { border-color: var(--violet); }
+.suspect:hover, .suspect:focus-visible { border-color: var(--yellow); }
 .passport {
   border: 1px dashed var(--edge);
   border-inline-start: .28rem solid var(--mint);

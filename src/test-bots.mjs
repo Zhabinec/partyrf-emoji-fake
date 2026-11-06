@@ -11,17 +11,16 @@ export function addTestBots(room) {
 
 export function runTestBots(room, now) {
   const { game } = room;
-  if (!room.testRoom || !['choose', 'explain', 'vote'].includes(game.phase)) return;
+  if (!room.testRoom || !['choose', 'vote'].includes(game.phase)) return;
   const members = [...room.members.values()].filter(member => !member.left);
   const players = members.map(member => member.id);
   const { step } = game;
   for (const bot of members.filter(member => member.isBot)) {
     if (game.step !== step) break;
     const state = view(game, bot.id);
-    if (now < state.deadline - state.duration + (state.phase === 'explain' ? 1600 : 650)) continue;
+    if (now < state.deadline - state.duration + 650) continue;
     let action;
     if (state.options) action = { type: 'choose', value: state.options[Math.floor(Math.random() * state.options.length)] };
-    else if (state.phase === 'explain' && state.speaker === bot.id) action = { type: 'done' };
     else if (state.phase === 'vote' && !state.done) {
       const suspects = players.filter(id => id !== bot.id);
       action = { type: 'vote', value: suspects[Math.floor(Math.random() * suspects.length)] };

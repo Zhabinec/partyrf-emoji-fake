@@ -74,15 +74,19 @@ function control(label, action, value, className = '') {
   return `<button type="button" class="${className}" data-action="${action}" data-value="${escape(value)}">${label}</button>`;
 }
 
+function evidenceCard(name, clues) {
+  return `<strong>${name}</strong><span class="evidence-emojis">${clues.map(({ emoji, round }) =>
+    `<span title="Раунд ${round}">${emoji ? escape(emoji) : '<small>Пропуск</small>'}</span>`).join('')}</span>`;
+}
+
 function renderRoom(state) {
   const isHost = state.host === state.me;
   const nameOf = id => escape(state.players.find(player => player.id === id)?.name ?? 'Игрок');
-  const speakerIsBot = state.players.some(player => player.id === state.speaker && player.isBot);
   const roster = row => `<ul class="roster">${state.players.map(player => row(player.id)).join('')}</ul>`;
   const finaleButton = label => isHost ? button(label, 'next-finale') : '<p class="waiting">Хост откроет следующий экран.</p>';
   if (state.phase === 'briefing') {
     const [title, caption] = state.nextPhase === 'vote'
-      ? ['Кого <em>на досмотр?</em>', 'Вспомните объяснения. Сейчас у каждого будет один голос.']
+      ? ['Пора сделать <em>выбор!</em>', 'Перед вами три улики на каждого. Кого отправим на досмотр?']
       : state.nextPhase === 'verdict'
         ? ['Сканер, <em>не подведи!</em>', 'Голоса приняты. Проверяем, кто прилетел с Земли.']
         : briefings[state.round - 1];
@@ -137,31 +141,30 @@ function renderRoom(state) {
   const secret = passport('ТВОЙ ПАСПОРТ · СЕКРЕТНЫЙ КОД', state.word);
 
   if (state.phase === 'vote') {
-    return `${kicker('ГОЛОСОВАНИЕ')}<h1>Кто прилетел <em>с Земли?</em></h1>${secret}
-      <p class="lede">Людей под прикрытием: ${state.fakeCount}. У тебя один голос.</p>
-      ${state.done ? '<p class="waiting">Голос принят. Ждём остальных.</p>' :
-        `<form data-form="vote"><label for="suspect">Твой подозреваемый</label>
-          <select id="suspect" name="value" required><option value="">Выбери игрока</option>
-            ${state.players.filter(player => player.id !== state.me).map(player =>
-              `<option value="${escape(player.id)}">${nameOf(player.id)}</option>`).join('')}
-          </select><button type="submit">Отправить на досмотр</button></form>`}${history}`;
+    const cards = state.players.map(({ id }) => {
+      const content = evidenceCard(nameOf(id), state.history.filter(entry => entry.id === id));
+      return state.done || id === state.me
+        ? `<div class="evidence-card">${content}${id === state.me ? '<small>Это ты</small>' : ''}</div>`
+        : control(content, 'vote', id, 'evidence-card suspect');
+    });
+    return `${kicker('ФИНАЛЬНОЕ ГОЛОСОВАНИЕ')}<h1>Кто прилетел <em>с Земли?</em></h1>
+      <p class="lede">${state.done ? 'Голос принят. Ждём остальных.' : 'Нажми на карточку подозреваемого. У тебя один голос.'}</p>
+      <p>Людей под прикрытием: ${state.fakeCount}</p>
+      <section class="evidence-grid" aria-label="Улики за три раунда">${cards.join('')}</section>`;
   }
-  const mine = state.speaker === state.me;
-  const choosing = state.phase === 'choose';
-  return `${kicker(inspections[state.round - 1] + ' · ' + state.round + '/3 · ХОД ' + state.turn.join(' / '))}
-    <h1>${mine ? (choosing ? 'Что у тебя <em>в багаже?</em>' : 'И как это <em>сюда попало?</em>') :
-      `На досмотре <em>${nameOf(state.speaker)}</em>`}</h1>
-    ${secret}
-    ${choosing ? (mine ?
-      `<p class="lede">Выбери один эмодзи, который сможешь связать со своим кодом.</p>
-        <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(`<span>${escape(emoji)}</span>`, 'choose', emoji, 'emoji')).join('')}</section>` :
-      '<p class="waiting">Игрок выбирает эмодзи.</p>') :
-      `<p class="chosen">${escape(state.selected)}</p><p class="lede">${mine ?
-        'Объясни связь вслух. Сам код держи в секрете.' : speakerIsBot
-          ? 'Бот предъявил багаж. В тесте его ход закончится автоматически.'
-          : 'Послушай объяснение. Подозрительный багаж запоминается.'}</p>
-        ${mine || isHost ? button('Следующий пассажир', 'done') : ''}`}
-    ${history}`;
+  const label = kicker(inspections[state.round - 1] + ' · ' + state.round + '/3');
+  if (state.phase === 'choose') {
+    return `${label}<h1>Что у тебя <em>в багаже?</em></h1>${secret}
+      ${state.options
+        ? `<p class="lede">Выбери один эмодзи, который сможешь связать со своим кодом.</p>
+          <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(`<span>${escape(emoji)}</span>`, 'choose', emoji, 'emoji')).join('')}</section>`
+        : `<p class="chosen">${escape(state.selected)}</p><p class="waiting">Выбор запечатан. Ждём остальных.</p>`}`;
+  }
+  return `${label}<h1>Открываем <em>багаж!</em></h1>${secret}
+    <p class="lede">Объясняйте свои эмодзи вслух, задавайте вопросы и спорьте в любом порядке. Код держите в секрете.</p>
+    <section class="evidence-grid discussion-cards" aria-label="Эмодзи этого раунда">
+      ${state.cards.map(clue => `<div class="evidence-card">${evidenceCard(nameOf(clue.id), [clue])}</div>`).join('')}
+    </section>`;
 }
 
 export function roomScreen(state) {

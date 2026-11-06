@@ -167,7 +167,7 @@ async function action(type, value) {
   const data = await request('rooms/' + session.code, { type, value, step: state.step }, session.token);
   if (id < lastApplied) return;
   applyState(data.state, id);
-  if (!data.error && type === 'vote' && state.phase === 'vote') {
+  if (!data.error && ['choose', 'vote'].includes(type) && state.phase === type) {
     const step = state.step;
     void playEffect('confirm', () => state?.step === step);
   }
