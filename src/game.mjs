@@ -2,7 +2,7 @@ import { emojis, words } from './content.mjs';
 
 export const limits = { minPlayers: 3, maxPlayers: 10, name: 24 };
 const rounds = 3;
-const durations = { briefing: 2500, choose: 18_000, explain: 45_000, vote: 30_000 };
+const durations = { briefing: 2500, choose: 18_000, explain: 30_000, vote: 30_000 };
 
 export function newGame() {
   return { phase: 'lobby', step: 0, deadline: null };
