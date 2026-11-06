@@ -79,8 +79,10 @@ function showLevels() {
 showLevels();
 document.querySelector('#sound-toggle').addEventListener('click', () => {
   unlockSound();
+  document.querySelector('#header-menu').open = false;
   settings.showModal();
 });
+settings.addEventListener('close', () => document.querySelector('#header-menu summary').focus());
 settings.addEventListener('input', () => {
   unlockSound();
   effectsGain?.gain.setTargetAtTime(effectsLevel.valueAsNumber / 100, context.currentTime, .025);

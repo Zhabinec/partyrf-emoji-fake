@@ -5,6 +5,8 @@ const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
 const roomLabel = document.querySelector('#room-label');
 const leaveRoom = document.querySelector('#leave-room');
+const headerMenu = document.querySelector('#header-menu');
+const menuToggle = headerMenu.querySelector('summary');
 let code = new URLSearchParams(location.search).get('room')?.toUpperCase() ?? '';
 const sessionKey = 'emoji-fake-session';
 let session;
@@ -124,11 +126,22 @@ async function sync() {
 
 function showEntrance() {
   setSoundPhase(null);
+  headerMenu.open = false;
   roomLabel.textContent = 'ИГРА ДЛЯ КОМПАНИИ';
   leaveRoom.hidden = true;
   app.classList.remove('in-room');
   app.innerHTML = entrance(code, app.hasAttribute('data-test-bots'));
 }
+
+document.addEventListener('click', event => {
+  if (headerMenu.open && !headerMenu.contains(event.target)) headerMenu.open = false;
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && headerMenu.open) {
+    headerMenu.open = false;
+    menuToggle.focus();
+  }
+});
 
 leaveRoom.addEventListener('click', () => {
   if (!session) return;
