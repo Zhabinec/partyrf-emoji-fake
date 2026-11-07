@@ -96,7 +96,7 @@ function renderRoom(state) {
     return `<div class="scene briefing">${art}${kicker('СВЯЗЬ С ТАМОЖНЕЙ')}<h1>${title}</h1><p>${caption}</p></div>`;
   }
   if (state.phase === 'lobby') {
-    return `${kicker('У ШЛЮЗА · ' + state.players.length + ' / 10')}
+    return `${kicker('У ШЛЮЗА · ' + state.players.filter(player => !player.disconnected).length + ' / 10')}
       <h1>Пассажиры <em>на борт!</em></h1>
       <p class="lede">Отправь друзьям ссылку. Для старта нужно минимум три игрока.</p>
       <details class="rules"><summary>Как играть · 5–8 минут</summary>
@@ -106,8 +106,8 @@ function renderRoom(state) {
       </details>
       <section class="invite"><strong>${state.code}</strong>${button('Скопировать ссылку', 'copy')}</section>
       <input id="invite-link" class="invite-link" aria-label="Ссылка на комнату" readonly>
-      ${roster(id => `<li><span>${nameOf(id)}</span><b>${id === state.host ? 'Хост' : 'В комнате'}</b></li>`)}
-      ${isHost && state.players.length >= 3 ? button('Начать досмотр', 'start') : '<p class="waiting">Ждём открытия шлюза.</p>'}`;
+      ${roster(id => `<li><span>${nameOf(id)}</span><b>${state.players.find(player => player.id === id)?.disconnected ? 'Нет связи' : id === state.host ? 'Хост' : 'В комнате'}</b></li>`)}
+      ${isHost && state.players.filter(player => !player.disconnected).length >= 3 ? button('Начать досмотр', 'start') : '<p class="waiting">Ждём открытия шлюза.</p>'}`;
   }
   if (state.phase === 'verdict') {
     const { townWins, fakes } = state.result;
@@ -173,6 +173,7 @@ function renderRoom(state) {
 }
 
 export function roomScreen(state) {
+  if (state.spectator) return '<section class="panel round"><section class="round-status"><span id="progress"></span></section><h1>Партия уже идёт</h1><p class="waiting">Ты вернулся после начала новой партии. Дождись финала, чтобы присоединиться к следующей.</p></section>';
   const clock = state.deadline !== null && state.phase !== 'briefing'
     ? '<div class="countdown"><time id="timer"></time><progress id="time-bar" aria-label="Осталось времени"></progress><span class="clock-warning" id="clock-warning" hidden>Шлюз закрывается</span></div>' : '';
   return `<section class="panel round">

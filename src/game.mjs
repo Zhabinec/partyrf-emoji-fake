@@ -151,3 +151,7 @@ export function publicView(game) {
   const { word, options, selected, done, ...data } = view(game, null);
   return { ...data, done: true, display: true };
 }
+
+export function resume(game, id) {
+  if (game.departed) game.departed = game.departed.filter(player => player !== id);
+}
