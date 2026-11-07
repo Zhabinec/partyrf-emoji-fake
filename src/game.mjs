@@ -33,7 +33,7 @@ function start(game, players, now, random) {
   Object.assign(game, {
     pair: pairs[Math.floor(random() * pairs.length)],
     fakes: shuffle(players, random).slice(0, Math.floor(players.length / 3)),
-    order: shuffle(players, random), round: 0, history: [], votes: {},
+    order: shuffle(players, random), departed: [], round: 0, history: [], votes: {},
   });
   brief(game, 'choose', now);
 }
@@ -74,6 +74,15 @@ export function tick(game, now, random = Math.random) {
   } else if (game.phase === 'vote') reveal(game, now);
 }
 
+const required = game => (game.order ?? []).filter(id => !game.departed?.includes(id));
+
+export function depart(game, id, now) {
+  game.departed ??= [];
+  if (!game.departed.includes(id)) game.departed.push(id);
+  if (game.phase === 'choose' && required(game).every(player => Object.hasOwn(game.choices, player))) openDiscussion(game, now);
+  if (game.phase === 'vote' && required(game).every(player => Object.hasOwn(game.votes, player))) reveal(game, now);
+}
+
 export function act(game, { id, isHost, players }, action, now, random = Math.random) {
   tick(game, now, random);
   if (action.step !== game.step) return 'Этот этап уже закончился.';
@@ -93,7 +102,7 @@ export function act(game, { id, isHost, players }, action, now, random = Math.ra
     if (Object.hasOwn(game.choices, id)) return 'Эмодзи уже выбран.';
     if (!game.options[id].includes(action.value)) return 'Выбери один из трёх эмодзи.';
     game.choices[id] = action.value;
-    if (players.filter(player => game.order.includes(player)).every(player => Object.hasOwn(game.choices, player))) {
+    if (required(game).every(player => Object.hasOwn(game.choices, player))) {
       openDiscussion(game, now);
     }
     return;
@@ -102,7 +111,7 @@ export function act(game, { id, isHost, players }, action, now, random = Math.ra
     if (Object.hasOwn(game.votes, id)) return 'Голос уже принят.';
     if (id === action.value || !game.order.includes(action.value)) return 'Выбери другого игрока.';
     game.votes[id] = action.value;
-    if (Object.keys(game.votes).length === game.order.length) reveal(game, now);
+    if (required(game).every(player => Object.hasOwn(game.votes, player))) reveal(game, now);
     return;
   }
   return 'Это действие сейчас недоступно.';
@@ -124,7 +133,7 @@ export function view(game, id) {
   data.fakeCount = game.fakes.length;
   if (phase === 'vote') {
     data.done = Object.hasOwn(game.votes, id);
-    data.progress = [Object.keys(game.votes).length, game.order.length];
+    data.progress = [required(game).filter(player => Object.hasOwn(game.votes, player)).length, required(game).length];
     return data;
   }
   data.round = game.round + 1;
@@ -132,8 +141,13 @@ export function view(game, id) {
     data.selected = game.choices[id] ?? null;
     data.done = data.selected !== null;
     if (!data.done) data.options = game.options[id];
-    data.progress = [Object.keys(game.choices).length, game.order.length];
+    data.progress = [required(game).filter(player => Object.hasOwn(game.choices, player)).length, required(game).length];
   }
   if (phase === 'explain') data.cards = game.history.filter(entry => entry.round === data.round);
   return data;
+}
+
+export function publicView(game) {
+  const { word, options, selected, done, ...data } = view(game, null);
+  return { ...data, done: true, display: true };
 }

@@ -99,6 +99,11 @@ function renderRoom(state) {
     return `${kicker('У ШЛЮЗА · ' + state.players.length + ' / 10')}
       <h1>Пассажиры <em>на борт!</em></h1>
       <p class="lede">Отправь друзьям ссылку. Для старта нужно минимум три игрока.</p>
+      <details class="rules"><summary>Как играть · 5–8 минут</summary>
+        <ol><li>У пришельцев общий секретный код, у землян — похожий. Свою роль никто не знает. На каждые три игрока приходится один землянин.</li>
+        <li>Три раза выбирайте один эмодзи из трёх, затем обсуждайте их вслух. Объясняйте связь со своим кодом, не называя код.</li>
+        <li>После трёх раундов голосуйте за подозреваемого. Пришельцы выигрывают, если нашли всех землян. Ничья на границе мест оставляет их незанятыми.</li></ol>
+      </details>
       <section class="invite"><strong>${state.code}</strong>${button('Скопировать ссылку', 'copy')}</section>
       <input id="invite-link" class="invite-link" aria-label="Ссылка на комнату" readonly>
       ${roster(id => `<li><span>${nameOf(id)}</span><b>${id === state.host ? 'Хост' : 'В комнате'}</b></li>`)}
@@ -138,7 +143,7 @@ function renderRoom(state) {
       ${isHost ? button('Сыграть ещё', 'start') : '<p class="waiting">Хост может начать новую партию.</p>'}`;
   }
 
-  const secret = passport('ТВОЙ ПАСПОРТ · СЕКРЕТНЫЙ КОД', state.word);
+  const secret = state.display ? '' : passport('ТВОЙ ПАСПОРТ · СЕКРЕТНЫЙ КОД', state.word);
 
   if (state.phase === 'vote') {
     const cards = state.players.map(({ id }) => {
@@ -148,14 +153,14 @@ function renderRoom(state) {
         : control(content, 'vote', id, 'evidence-card suspect');
     });
     return `${kicker('ФИНАЛЬНОЕ ГОЛОСОВАНИЕ')}<h1>Кто прилетел <em>с Земли?</em></h1>
-      <p class="lede">${state.done ? 'Голос принят. Ждём остальных.' : 'Нажми на карточку подозреваемого. У тебя один голос.'}</p>
+      <p class="lede">${state.display ? 'Голосуйте со своих устройств. Здесь — все подозреваемые.' : state.done ? 'Голос принят. Ждём остальных.' : 'Нажми на карточку подозреваемого. У тебя один голос.'}</p>
       <p>Людей под прикрытием: ${state.fakeCount}</p>
       <section class="evidence-grid" aria-label="Улики за три раунда">${cards.join('')}</section>`;
   }
   const label = kicker(inspections[state.round - 1] + ' · ' + state.round + '/3');
   if (state.phase === 'choose') {
     return `${label}<h1>Что у тебя <em>в багаже?</em></h1>${secret}
-      ${state.options
+      ${state.display ? '<p class="lede">Все выбирают эмодзи на телефонах. Карточки откроются, когда все готовы или время выйдет.</p>' : state.options
         ? `<p class="lede">Выбери один эмодзи, который сможешь связать со своим кодом.</p>
           <section class="choices" aria-label="Три эмодзи">${state.options.map(emoji => control(`<span>${escape(emoji)}</span>`, 'choose', emoji, 'emoji')).join('')}</section>`
         : `<p class="chosen">${escape(state.selected)}</p><p class="waiting">Выбор запечатан. Ждём остальных.</p>`}`;
