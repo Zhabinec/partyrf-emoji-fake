@@ -4,7 +4,7 @@ import { act, view } from './game.mjs';
 export const testBotsEnabled = process.env.TEST_BOTS !== '0';
 
 export function addTestBots(room) {
-  for (const name of ['Бот Орбита', 'Бот Шлюз', 'Бот Пиксель']) {
+  for (const name of ['Бот Орбита', 'Бот Шлюз', 'Бот Пиксель', 'Бот Комета', 'Бот Спутник']) {
     room.members.set(randomUUID(), { id: randomUUID(), name, isBot: true });
   }
 }
